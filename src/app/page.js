@@ -1,7 +1,14 @@
+import { redirect } from 'next/navigation';
+
 export default function Home() {
-  return (
-    <div>
-      <h1>Hello World</h1>
-    </div>
-  )
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    if (path.startsWith('/en')) {
+      redirect('/en');
+    } else {
+      redirect('/th');
+    }
+  } else {
+    redirect('/th');
+  }
 }
