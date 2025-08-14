@@ -22,19 +22,19 @@ export async function GET(request) {
 
   try {
     const supabase = await createClient();
-    const { data: events, error } = await supabase
-      .from('events')
+    const { data: courses, error } = await supabase
+      .from('courses')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching events:', error);
+      console.error('Error fetching courses:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ events: events || [] });
+    return NextResponse.json({ courses: courses || [] });
   } catch (error) {
-    console.error('Events API error:', error);
+    console.error('Courses API error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -44,38 +44,38 @@ export async function POST(request) {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { name, description, date, location, price, image_url } = await request.json();
+    const { name, description, price, duration, instructor, image_url } = await request.json();
 
-    if (!name || !date) {
-      return NextResponse.json({ error: "กรุณากรอกชื่ออีเวนต์และวันที่" }, { status: 400 });
+    if (!name || !price) {
+      return NextResponse.json({ error: "กรุณากรอกชื่อคอร์สและราคา" }, { status: 400 });
     }
 
     const supabase = await createClient();
-    const { data: newEvent, error } = await supabase
-      .from('events')
+    const { data: newCourse, error } = await supabase
+      .from('courses')
       .insert([{
         name,
         description: description || '',
-        date: new Date(date).toISOString(),
-        location: location || '',
-        price: price ? parseFloat(price) : 0,
+        price: parseFloat(price),
+        duration: duration || '',
+        instructor: instructor || '',
         image_url: image_url || ''
       }])
       .select()
       .single();
 
     if (error) {
-      console.error("Event creation error:", error);
-      return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสร้างอีเวนต์" }, { status: 500 });
+      console.error("Course creation error:", error);
+      return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสร้างคอร์ส" }, { status: 500 });
     }
 
     return NextResponse.json({
-      message: "สร้างอีเวนต์สำเร็จ",
-      event: newEvent
+      message: "สร้างคอร์สสำเร็จ",
+      course: newCourse
     });
 
   } catch (error) {
-    console.error('Event creation API error:', error);
+    console.error('Course creation API error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -85,21 +85,21 @@ export async function PUT(request) {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { id, name, description, date, location, price, image_url } = await request.json();
+    const { id, name, description, price, duration, instructor, image_url } = await request.json();
 
-    if (!id || !name || !date) {
+    if (!id || !name || !price) {
       return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
     }
 
     const supabase = await createClient();
-    const { data: updatedEvent, error } = await supabase
-      .from('events')
+    const { data: updatedCourse, error } = await supabase
+      .from('courses')
       .update({
         name,
         description: description || '',
-        date: new Date(date).toISOString(),
-        location: location || '',
-        price: price ? parseFloat(price) : 0,
+        price: parseFloat(price),
+        duration: duration || '',
+        instructor: instructor || '',
         image_url: image_url || '',
         updated_at: new Date().toISOString()
       })
@@ -108,17 +108,17 @@ export async function PUT(request) {
       .single();
 
     if (error) {
-      console.error("Event update error:", error);
-      return NextResponse.json({ error: "เกิดข้อผิดพลาดในการอัปเดตอีเวนต์" }, { status: 500 });
+      console.error("Course update error:", error);
+      return NextResponse.json({ error: "เกิดข้อผิดพลาดในการอัปเดตคอร์ส" }, { status: 500 });
     }
 
     return NextResponse.json({
-      message: "อัปเดตอีเวนต์สำเร็จ",
-      event: updatedEvent
+      message: "อัปเดตคอร์สสำเร็จ",
+      course: updatedCourse
     });
 
   } catch (error) {
-    console.error('Event update API error:', error);
+    console.error('Course update API error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -127,9 +127,9 @@ export async function DELETE(request) {
   const admin = verifyAdmin(request);
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await request.json();
-  if (!id) return NextResponse.json({ error: "Missing event id" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Missing course id" }, { status: 400 });
   const supabase = await createClient();
-  const { error } = await supabase.from("events").delete().eq("id", id);
+  const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ success: true }, { status: 200 });
-} 
+}

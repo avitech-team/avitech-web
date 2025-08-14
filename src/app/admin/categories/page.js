@@ -1,35 +1,32 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 
-function CourseAdmin() {
-  const [courses, setCourses] = useState([])
+function CategoriesAdmin() {
+  const [categories, setCategories] = useState([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
+    slug: '',
     description: '',
-    instructor: '',
-    duration: '',
-    price: '',
-    image_url: '',
-    is_active: true
+    status: true
   })
 
-  // ดึงข้อมูลคอร์สจาก API
-  const fetchCourses = async () => {
+  // ดึงข้อมูลหมวดหมู่จาก API
+  const fetchCategories = async () => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/course', {
+      const response = await fetch('/api/categories', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
-      if (!response.ok) throw new Error('Failed to fetch courses')
+      if (!response.ok) throw new Error('Failed to fetch categories')
       const data = await response.json()
-      setCourses(data.courses || [])
+      setCategories(data.categories || [])
     } catch (err) {
       setError(err.message)
     } finally {
@@ -38,14 +35,30 @@ function CourseAdmin() {
   }
 
   useEffect(() => {
-    fetchCourses()
+    fetchCategories()
   }, [])
+
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  }
+
+  const handleNameChange = (name) => {
+    setFormData({
+      ...formData,
+      name,
+      slug: generateSlug(name)
+    })
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       const token = localStorage.getItem('token')
-      const url = editingId ? `/api/course` : `/api/course`
+      const url = editingId ? `/api/categories` : `/api/categories`
       const method = editingId ? 'PUT' : 'POST'
       
       const requestData = editingId ? { ...formData, id: editingId } : formData
@@ -61,36 +74,33 @@ function CourseAdmin() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save course')
+        throw new Error(errorData.error || 'Failed to save category')
       }
       
-      await fetchCourses()
+      await fetchCategories()
       resetForm()
     } catch (err) {
       setError(err.message)
     }
   }
 
-  const handleEdit = (course) => {
-    setEditingId(course.id)
+  const handleEdit = (category) => {
+    setEditingId(category.id)
     setFormData({
-      name: course.name || '',
-      description: course.description || '',
-      instructor: course.instructor || '',
-      duration: course.duration || '',
-      price: course.price || '',
-      image_url: course.image_url || '',
-      is_active: course.is_active !== false
+      name: category.name || '',
+      slug: category.slug || '',
+      description: category.description || '',
+      status: category.status !== false
     })
     setIsAdding(true)
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบคอร์สนี้?')) return
+    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้?')) return
     
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/course', {
+      const response = await fetch('/api/categories', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -101,10 +111,10 @@ function CourseAdmin() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete course')
+        throw new Error(errorData.error || 'Failed to delete category')
       }
       
-      await fetchCourses()
+      await fetchCategories()
     } catch (err) {
       setError(err.message)
     }
@@ -113,12 +123,9 @@ function CourseAdmin() {
   const resetForm = () => {
     setFormData({
       name: '',
+      slug: '',
       description: '',
-      instructor: '',
-      duration: '',
-      price: '',
-      image_url: '',
-      is_active: true
+      status: true
     })
     setIsAdding(false)
     setEditingId(null)
@@ -136,12 +143,12 @@ function CourseAdmin() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-semibold mb-2 md:mb-4">จัดการคอร์ส</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2 md:mb-4">จัดการหมวดหมู่</h1>
         <button
           onClick={() => setIsAdding(true)}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
-          เพิ่มคอร์ส
+          เพิ่มหมวดหมู่
         </button>
       </div>
 
@@ -154,56 +161,32 @@ function CourseAdmin() {
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">
-            {editingId ? 'แก้ไขคอร์ส' : 'เพิ่มคอร์สใหม่'}
+            {editingId ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ชื่อคอร์ส
+                  ชื่อหมวดหมู่
                 </label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ผู้สอน
+                  Slug
                 </label>
                 <input
                   type="text"
-                  value={formData.instructor}
-                  onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ระยะเวลา
-                </label>
-                <input
-                  type="text"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="เช่น 10 ชั่วโมง"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ราคา
-                </label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  step="0.01"
-                  placeholder="0"
+                  required
                 />
               </div>
               <div>
@@ -211,8 +194,8 @@ function CourseAdmin() {
                   สถานะ
                 </label>
                 <select
-                  value={formData.is_active ? 'true' : 'false'}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.value === 'true' })}
+                  value={formData.status ? 'true' : 'false'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value === 'true' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="true">ใช้งาน</option>
@@ -222,24 +205,12 @@ function CourseAdmin() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                รูปภาพ (URL)
-              </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
                 คำอธิบาย
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
+                rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -268,22 +239,19 @@ function CourseAdmin() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  รูปภาพ
+                  ชื่อหมวดหมู่
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ชื่อคอร์ส
+                  Slug
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ผู้สอน
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ระยะเวลา
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ราคา
+                  คำอธิบาย
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   สถานะ
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  วันที่สร้าง
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   การดำเนินการ
@@ -291,54 +259,40 @@ function CourseAdmin() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {courses.map((course) => (
-                <tr key={course.id}>
+              {categories.map((category) => (
+                <tr key={category.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {course.image_url ? (
-                      <img
-                        src={course.image_url}
-                        alt={course.name}
-                        className="h-12 w-12 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">ไม่มีรูป</span>
-                      </div>
-                    )}
+                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{course.name}</div>
-                    <div className="text-sm text-gray-500">{course.description}</div>
+                    <div className="text-sm text-gray-900">{category.slug}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{course.instructor || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{course.duration || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {course.price ? `฿${parseFloat(course.price).toLocaleString()}` : 'ฟรี'}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 max-w-xs truncate">
+                      {category.description || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      course.is_active !== false 
+                      category.status !== false 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {course.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      {category.status !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {category.created_at ? new Date(category.created_at).toLocaleDateString('th-TH') : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => handleEdit(course)}
+                      onClick={() => handleEdit(category)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
                     >
                       แก้ไข
                     </button>
                     <button
-                      onClick={() => handleDelete(course.id)}
+                      onClick={() => handleDelete(category.id)}
                       className="text-red-600 hover:text-red-900"
                     >
                       ลบ
@@ -354,4 +308,4 @@ function CourseAdmin() {
   )
 }
 
-export default CourseAdmin
+export default CategoriesAdmin

@@ -23,8 +23,8 @@ export default function LoginPage() {
       setError(result.error || "Login failed");
     } else {
       // เก็บ accessToken ลง localStorage
-      if (result.accessToken) {
-        localStorage.setItem("accessToken", result.accessToken);
+      if (result.token) {
+        localStorage.setItem("token", result.token);
       }
       router.push("/"); // หรือหน้า dashboard
     }

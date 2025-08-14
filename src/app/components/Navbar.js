@@ -80,14 +80,21 @@ function Navbar() {
     const [lang, setLang] = React.useState('th');
     const [showLangDropdown, setShowLangDropdown] = React.useState(false);
     const [currentPath, setCurrentPath] = React.useState('/th');
+    const [isAdminPage, setIsAdminPage] = React.useState(false);
 
     React.useEffect(() => {
         const detectedLang = getLangFromPath();
         setLang(detectedLang);
         if (typeof window !== 'undefined') {
             setCurrentPath(window.location.pathname);
+            // Check if current path is /admin or starts with /admin
+            setIsAdminPage(window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/'));
         }
     }, []);
+
+    if (isAdminPage) {
+        return null;
+    }
 
     const currentMenu = menuItems[lang];
 

@@ -1,35 +1,35 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 
-function CourseAdmin() {
-  const [courses, setCourses] = useState([])
+function CouponsAdmin() {
+  const [coupons, setCoupons] = useState([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    instructor: '',
-    duration: '',
-    price: '',
-    image_url: '',
+    code: '',
+    discount_type: 'percentage',
+    discount_value: '',
+    min_order_amount: '',
+    max_usage: '',
+    valid_until: '',
     is_active: true
   })
 
-  // ดึงข้อมูลคอร์สจาก API
-  const fetchCourses = async () => {
+  // ดึงข้อมูลคูปองจาก API
+  const fetchCoupons = async () => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/course', {
+      const response = await fetch('/api/coupons', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
-      if (!response.ok) throw new Error('Failed to fetch courses')
+      if (!response.ok) throw new Error('Failed to fetch coupons')
       const data = await response.json()
-      setCourses(data.courses || [])
+      setCoupons(data.coupons || [])
     } catch (err) {
       setError(err.message)
     } finally {
@@ -38,14 +38,14 @@ function CourseAdmin() {
   }
 
   useEffect(() => {
-    fetchCourses()
+    fetchCoupons()
   }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       const token = localStorage.getItem('token')
-      const url = editingId ? `/api/course` : `/api/course`
+      const url = editingId ? `/api/coupons` : `/api/coupons`
       const method = editingId ? 'PUT' : 'POST'
       
       const requestData = editingId ? { ...formData, id: editingId } : formData
@@ -61,36 +61,36 @@ function CourseAdmin() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save course')
+        throw new Error(errorData.error || 'Failed to save coupon')
       }
       
-      await fetchCourses()
+      await fetchCoupons()
       resetForm()
     } catch (err) {
       setError(err.message)
     }
   }
 
-  const handleEdit = (course) => {
-    setEditingId(course.id)
+  const handleEdit = (coupon) => {
+    setEditingId(coupon.id)
     setFormData({
-      name: course.name || '',
-      description: course.description || '',
-      instructor: course.instructor || '',
-      duration: course.duration || '',
-      price: course.price || '',
-      image_url: course.image_url || '',
-      is_active: course.is_active !== false
+      code: coupon.code || '',
+      discount_type: coupon.discount_type || 'percentage',
+      discount_value: coupon.discount_value || '',
+      min_order_amount: coupon.min_order_amount || '',
+      max_usage: coupon.max_usage || '',
+      valid_until: coupon.valid_until ? coupon.valid_until.split('T')[0] : '',
+      is_active: coupon.is_active !== false
     })
     setIsAdding(true)
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบคอร์สนี้?')) return
+    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบคูปองนี้?')) return
     
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/course', {
+      const response = await fetch('/api/coupons', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -101,10 +101,10 @@ function CourseAdmin() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete course')
+        throw new Error(errorData.error || 'Failed to delete coupon')
       }
       
-      await fetchCourses()
+      await fetchCoupons()
     } catch (err) {
       setError(err.message)
     }
@@ -112,17 +112,22 @@ function CourseAdmin() {
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      instructor: '',
-      duration: '',
-      price: '',
-      image_url: '',
+      code: '',
+      discount_type: 'percentage',
+      discount_value: '',
+      min_order_amount: '',
+      max_usage: '',
+      valid_until: '',
       is_active: true
     })
     setIsAdding(false)
     setEditingId(null)
     setError(null)
+  }
+
+  const isExpired = (validUntil) => {
+    if (!validUntil) return false
+    return new Date(validUntil) < new Date()
   }
 
   if (loading) {
@@ -136,12 +141,12 @@ function CourseAdmin() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-semibold mb-2 md:mb-4">จัดการคอร์ส</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2 md:mb-4">จัดการคูปอง</h1>
         <button
           onClick={() => setIsAdding(true)}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
-          เพิ่มคอร์ส
+          เพิ่มคูปอง
         </button>
       </div>
 
@@ -154,56 +159,82 @@ function CourseAdmin() {
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">
-            {editingId ? 'แก้ไขคอร์ส' : 'เพิ่มคอร์สใหม่'}
+            {editingId ? 'แก้ไขคูปอง' : 'เพิ่มคูปองใหม่'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ชื่อคอร์ส
+                  รหัสคูปอง
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ผู้สอน
+                  ประเภทส่วนลด
                 </label>
-                <input
-                  type="text"
-                  value={formData.instructor}
-                  onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                <select
+                  value={formData.discount_type}
+                  onChange={(e) => setFormData({ ...formData, discount_type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  <option value="percentage">เปอร์เซ็นต์ (%)</option>
+                  <option value="fixed">จำนวนเงินคงที่ (฿)</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ระยะเวลา
-                </label>
-                <input
-                  type="text"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="เช่น 10 ชั่วโมง"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ราคา
+                  มูลค่าส่วนลด
                 </label>
                 <input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  value={formData.discount_value}
+                  onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                   step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ยอดสั่งซื้อขั้นต่ำ
+                </label>
+                <input
+                  type="number"
+                  value={formData.min_order_amount}
+                  onChange={(e) => setFormData({ ...formData, min_order_amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  จำนวนครั้งสูงสุด
+                </label>
+                <input
+                  type="number"
+                  value={formData.max_usage}
+                  onChange={(e) => setFormData({ ...formData, max_usage: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="ไม่จำกัด"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  วันหมดอายุ
+                </label>
+                <input
+                  type="date"
+                  value={formData.valid_until}
+                  onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -219,29 +250,6 @@ function CourseAdmin() {
                   <option value="false">ไม่ใช้งาน</option>
                 </select>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                รูปภาพ (URL)
-              </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                คำอธิบาย
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
             </div>
             <div className="flex gap-2">
               <button
@@ -268,19 +276,22 @@ function CourseAdmin() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  รูปภาพ
+                  รหัสคูปอง
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ชื่อคอร์ส
+                  ประเภท
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ผู้สอน
+                  มูลค่า
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ระยะเวลา
+                  ยอดขั้นต่ำ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ราคา
+                  จำนวนครั้ง
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  วันหมดอายุ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   สถานะ
@@ -291,54 +302,64 @@ function CourseAdmin() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {courses.map((course) => (
-                <tr key={course.id}>
+              {coupons.map((coupon) => (
+                <tr key={coupon.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {course.image_url ? (
-                      <img
-                        src={course.image_url}
-                        alt={course.name}
-                        className="h-12 w-12 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">ไม่มีรูป</span>
-                      </div>
-                    )}
+                    <div className="text-sm font-medium text-gray-900">{coupon.code}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{course.name}</div>
-                    <div className="text-sm text-gray-500">{course.description}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{course.instructor || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{course.duration || '-'}</div>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      coupon.discount_type === 'percentage' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {coupon.discount_type === 'percentage' ? 'เปอร์เซ็นต์' : 'จำนวนเงิน'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {course.price ? `฿${parseFloat(course.price).toLocaleString()}` : 'ฟรี'}
+                      {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `฿${coupon.discount_value}`}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {coupon.min_order_amount ? `฿${coupon.min_order_amount}` : 'ไม่มี'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {coupon.max_usage || 'ไม่จำกัด'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {coupon.valid_until ? new Date(coupon.valid_until).toLocaleDateString('th-TH') : 'ไม่มี'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      course.is_active !== false 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
+                      isExpired(coupon.valid_until) 
+                        ? 'bg-red-100 text-red-800'
+                        : coupon.is_active !== false 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {course.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      {isExpired(coupon.valid_until) 
+                        ? 'หมดอายุ' 
+                        : coupon.is_active !== false 
+                          ? 'ใช้งาน' 
+                          : 'ไม่ใช้งาน'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => handleEdit(course)}
+                      onClick={() => handleEdit(coupon)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
                     >
                       แก้ไข
                     </button>
                     <button
-                      onClick={() => handleDelete(course.id)}
+                      onClick={() => handleDelete(coupon.id)}
                       className="text-red-600 hover:text-red-900"
                     >
                       ลบ
@@ -354,4 +375,4 @@ function CourseAdmin() {
   )
 }
 
-export default CourseAdmin
+export default CouponsAdmin

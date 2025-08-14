@@ -4,9 +4,9 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request) {
   try {
-    const { first_name, last_name, email, password, phone } = await request.json();
+    const { email, password, first_name, last_name } = await request.json();
 
-    if (!first_name || !last_name || !email || !password) {
+    if (!email || !password || !first_name || !last_name) {
       return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
     }
 
@@ -30,8 +30,8 @@ export async function POST(request) {
     // เข้ารหัสผ่าน
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // สร้างผู้ใช้ใหม่
-    const { data: newUser, error } = await supabase
+    // สร้างผู้ดูแลระบบ
+    const { data: newAdmin, error } = await supabase
       .from('users')
       .insert([
         {
@@ -39,26 +39,25 @@ export async function POST(request) {
           last_name,
           email,
           password_hash: hashedPassword,
-          phone: phone || null,
-          role: 0, // ผู้ใช้ทั่วไป
+          role: 1, // ผู้ดูแลระบบ
           is_active: true
         }
       ])
-      .select('id, first_name, last_name, email, phone, role, is_active, created_at')
+      .select('id, first_name, last_name, email, role, is_active, created_at')
       .single();
 
     if (error) {
-      console.error("Registration error:", error);
-      return NextResponse.json({ error: "เกิดข้อผิดพลาดในการลงทะเบียน" }, { status: 500 });
+      console.error("Setup admin error:", error);
+      return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสร้างผู้ดูแลระบบ" }, { status: 500 });
     }
 
     return NextResponse.json({
-      message: "ลงทะเบียนสำเร็จ",
-      user: newUser
+      message: "สร้างผู้ดูแลระบบสำเร็จ",
+      admin: newAdmin
     }, { status: 201 });
 
   } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json({ error: "เกิดข้อผิดพลาดในการลงทะเบียน" }, { status: 500 });
+    console.error("Setup admin error:", error);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสร้างผู้ดูแลระบบ" }, { status: 500 });
   }
 }

@@ -4,20 +4,28 @@ import { createClient } from "../../../../lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const [first_name, setFirstName] = useState("");
+  const [last_name, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
-  const [role, setRole] = useState("0"); // 0=user, 1=admin
   const router = useRouter();
   const supabase = createClient();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+    
+    if (!first_name || !last_name || !email || !password) {
+      setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+      return;
+    }
+    
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, role }),
+      body: JSON.stringify({ first_name, last_name, email, password, phone }),
     });
     const result = await res.json();
     if (!res.ok) {
@@ -35,12 +43,35 @@ export default function RegisterPage() {
     >
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Register</h2>
       <input
+        value={first_name}
+        onChange={e => setFirstName(e.target.value)}
+        placeholder="ชื่อ"
+        type="text"
+        className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        required
+      />
+      <input
+        value={last_name}
+        onChange={e => setLastName(e.target.value)}
+        placeholder="นามสกุล"
+        type="text"
+        className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        required
+      />
+      <input
         value={email}
         onChange={e => setEmail(e.target.value)}
         placeholder="Email"
         type="email"
         className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
         required
+      />
+      <input
+        value={phone}
+        onChange={e => setPhone(e.target.value)}
+        placeholder="เบอร์โทร (ไม่บังคับ)"
+        type="tel"
+        className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
       <input
         value={password}
