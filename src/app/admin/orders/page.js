@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 
 function OrdersAdmin() {
   const [orders, setOrders] = useState([])
@@ -26,7 +27,7 @@ function OrdersAdmin() {
   })
 
   // ดึงข้อมูลออเดอร์จาก API
-  const fetchOrders = async (page = 1) => {
+  const fetchOrders = useCallback(async (page = 1) => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -67,11 +68,11 @@ function OrdersAdmin() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, sorting, pagination])
 
   useEffect(() => {
     fetchOrders()
-  }, [filters, sorting])
+  }, [fetchOrders])
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -471,10 +472,12 @@ function OrdersAdmin() {
                       <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                         <div className="flex items-center space-x-3">
                           {item.products?.images && item.products.images.length > 0 && (
-                            <img
+                            <Image
                               src={item.products.images[0]}
                               alt={item.products.name}
-                              className="h-10 w-10 object-cover rounded"
+                              width={40}
+                              height={40}
+                              className="object-cover rounded"
                             />
                           )}
                           <div>

@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 
 function ProductsAdmin() {
   const [products, setProducts] = useState([])
@@ -42,7 +43,7 @@ function ProductsAdmin() {
   })
 
   // ดึงข้อมูลสินค้าจาก API
-  const fetchProducts = async (page = 1) => {
+  const fetchProducts = useCallback(async (page = 1) => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -85,7 +86,7 @@ function ProductsAdmin() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, sorting, pagination])
 
   // ดึงข้อมูลหมวดหมู่และแบรนด์
   const fetchCategoriesAndBrands = async () => {
@@ -121,7 +122,7 @@ function ProductsAdmin() {
   useEffect(() => {
     fetchProducts()
     fetchCategoriesAndBrands()
-  }, [filters, sorting])
+  }, [fetchProducts])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -559,10 +560,12 @@ function ProductsAdmin() {
                 <tr key={product.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {product.images && product.images.length > 0 ? (
-                      <img
+                      <Image
                         src={product.images[0]}
                         alt={product.name}
-                        className="h-12 w-12 object-cover rounded"
+                        width={48}
+                        height={48}
+                        className="object-cover rounded"
                       />
                     ) : (
                       <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">

@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 
 function BrandsAdmin() {
   const [brands, setBrands] = useState([])
@@ -265,10 +266,12 @@ function BrandsAdmin() {
                 <tr key={brand.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {brand.logo ? (
-                      <img
+                      <Image
                         src={brand.logo}
                         alt={brand.name}
-                        className="h-12 w-12 object-contain rounded"
+                        width={48}
+                        height={48}
+                        className="object-contain rounded"
                       />
                     ) : (
                       <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">

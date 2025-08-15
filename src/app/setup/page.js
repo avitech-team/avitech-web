@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 function SetupAdmin() {
   const [formData, setFormData] = useState({
@@ -100,19 +101,19 @@ function SetupAdmin() {
             {success || 'ระบบพร้อมใช้งานแล้ว'}
           </div>
           <div className="text-center space-y-4">
-            <a
+            <Link
               href="/admin"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               ไปหน้าแอดมิน
-            </a>
+            </Link>
             <br />
-            <a
+            <Link
               href="/"
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               กลับหน้าหลัก
-            </a>
+            </Link>
           </div>
         </div>
       </div>

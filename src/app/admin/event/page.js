@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 
 function EventAdmin() {
   const [events, setEvents] = useState([])
@@ -295,10 +296,12 @@ function EventAdmin() {
                 <tr key={event.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {event.image_url ? (
-                      <img
+                      <Image
                         src={event.image_url}
                         alt={event.name}
-                        className="h-12 w-12 object-cover rounded"
+                        width={48}
+                        height={48}
+                        className="object-cover rounded"
                       />
                     ) : (
                       <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">

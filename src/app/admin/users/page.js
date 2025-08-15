@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 function UsersAdmin() {
   const [users, setUsers] = useState([])
@@ -35,7 +35,7 @@ function UsersAdmin() {
   })
 
   // ดึงข้อมูลผู้ใช้จาก API
-  const fetchUsers = async (page = 1) => {
+  const fetchUsers = useCallback(async (page = 1) => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -76,11 +76,11 @@ function UsersAdmin() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, sorting, pagination])
 
   useEffect(() => {
     fetchUsers()
-  }, [filters, sorting])
+  }, [fetchUsers])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

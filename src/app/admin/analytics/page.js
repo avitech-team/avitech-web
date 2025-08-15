@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 function AnalyticsAdmin() {
   const [analyticsData, setAnalyticsData] = useState({})
@@ -8,7 +8,7 @@ function AnalyticsAdmin() {
   const [error, setError] = useState(null)
 
   // ดึงข้อมูลวิเคราะห์จาก API
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -25,11 +25,11 @@ function AnalyticsAdmin() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [period])
 
   useEffect(() => {
     fetchAnalytics()
-  }, [period])
+  }, [fetchAnalytics])
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('th-TH', {

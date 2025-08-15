@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 
 function ReportsAdmin() {
   const [reportData, setReportData] = useState([])
@@ -21,7 +22,7 @@ function ReportsAdmin() {
   }, [])
 
   // ดึงข้อมูลรายงานจาก API
-  const fetchReport = async () => {
+  const fetchReport = useCallback(async () => {
     if (!startDate || !endDate) {
       setError('กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด')
       return
@@ -51,13 +52,13 @@ function ReportsAdmin() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [reportType, startDate, endDate])
 
   useEffect(() => {
     if (startDate && endDate) {
       fetchReport()
     }
-  }, [reportType, startDate, endDate])
+  }, [fetchReport, startDate, endDate])
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('th-TH', {
@@ -227,10 +228,12 @@ function ReportsAdmin() {
             <tr key={index}>
               <td className="px-6 py-4 whitespace-nowrap">
                 {product.images && product.images.length > 0 ? (
-                  <img
+                  <Image
                     src={product.images[0]}
                     alt={product.name}
-                    className="h-12 w-12 object-cover rounded"
+                    width={48}
+                    height={48}
+                    className="object-cover rounded"
                   />
                 ) : (
                   <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">

@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 
 function CourseAdmin() {
   const [courses, setCourses] = useState([])
@@ -295,10 +296,12 @@ function CourseAdmin() {
                 <tr key={course.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {course.image_url ? (
-                      <img
+                      <Image
                         src={course.image_url}
                         alt={course.name}
-                        className="h-12 w-12 object-cover rounded"
+                        width={48}
+                        height={48}
+                        className="object-cover rounded"
                       />
                     ) : (
                       <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">

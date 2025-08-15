@@ -330,9 +330,9 @@ function DatabaseAdmin() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
+              <div className="h-5 w-5 text-blue-400 flex items-center justify-center">
+                <span className="text-lg">ℹ</span>
+              </div>
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800">
@@ -449,10 +449,10 @@ function DatabaseAdmin() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <h3 className="text-lg font-medium text-blue-900 mb-3">คำแนะนำการใช้งาน</h3>
         <div className="space-y-2 text-sm text-blue-800">
-          <p>1. กดปุ่ม "สร้างตาราง" เพื่อสร้างโครงสร้างฐานข้อมูล</p>
-          <p>2. กดปุ่ม "เพิ่มข้อมูลตัวอย่าง" เพื่อเพิ่มข้อมูลสำหรับการทดสอบ</p>
+          <p>1. กดปุ่ม &quot;สร้างตาราง&quot; เพื่อสร้างโครงสร้างฐานข้อมูล</p>
+          <p>2. กดปุ่ม &quot;เพิ่มข้อมูลตัวอย่าง&quot; เพื่อเพิ่มข้อมูลสำหรับการทดสอบ</p>
           <p>3. หลังจากนั้นคุณสามารถเริ่มใช้งานระบบได้</p>
-          <p>4. หากต้องการเริ่มต้นใหม่ ให้กดปุ่ม "รีเซ็ตฐานข้อมูล"</p>
+          <p>4. หากต้องการเริ่มต้นใหม่ ให้กดปุ่ม &quot;รีเซ็ตฐานข้อมูล&quot;</p>
         </div>
       </div>
     </div>
