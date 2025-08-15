@@ -249,8 +249,7 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const { id } = await request.json();
     
     if (!id) {
       return NextResponse.json({ error: "กรุณาระบุ ID ผู้ใช้" }, { status: 400 });

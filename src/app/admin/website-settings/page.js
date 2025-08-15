@@ -1,8 +1,8 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-function WebsiteSettings() {
+function WebsiteSettingsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'homepage')
@@ -937,6 +937,14 @@ function WebsiteSettings() {
         </div>
       </div>
     </div>
+  )
+}
+
+function WebsiteSettings() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">กำลังโหลด...</div>}>
+      <WebsiteSettingsContent />
+    </Suspense>
   )
 }
 

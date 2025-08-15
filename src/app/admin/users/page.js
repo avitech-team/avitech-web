@@ -35,7 +35,7 @@ function UsersAdmin() {
   })
 
   // ดึงข้อมูลผู้ใช้จาก API
-  const fetchUsers = useCallback(async (page = 1) => {
+  const fetchUsers = useCallback(async (page = 1, currentFilters = filters, currentSorting = sorting, currentPagination = pagination) => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -43,14 +43,14 @@ function UsersAdmin() {
       // สร้าง query parameters
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: pagination.limit.toString(),
-        sortBy: sorting.sortBy,
-        sortOrder: sorting.sortOrder
+        limit: currentPagination.limit.toString(),
+        sortBy: currentSorting.sortBy,
+        sortOrder: currentSorting.sortOrder
       })
       
-      if (filters.search) params.append('search', filters.search)
-      if (filters.role !== '') params.append('role', filters.role)
-      if (filters.status !== '') params.append('status', filters.status)
+      if (currentFilters.search) params.append('search', currentFilters.search)
+      if (currentFilters.role !== '') params.append('role', currentFilters.role)
+      if (currentFilters.status !== '') params.append('status', currentFilters.status)
 
       const response = await fetch(`/api/users?${params.toString()}`, {
         headers: {
@@ -66,7 +66,7 @@ function UsersAdmin() {
       const data = await response.json()
       setUsers(data.users || [])
       setPagination({
-        ...pagination,
+        ...currentPagination,
         currentPage: data.pagination.currentPage,
         totalPages: data.pagination.totalPages,
         totalItems: data.pagination.totalItems
@@ -76,11 +76,17 @@ function UsersAdmin() {
     } finally {
       setLoading(false)
     }
-  }, [filters, sorting, pagination])
+  }, []) // ไม่มี dependencies
 
+  // โหลดข้อมูลครั้งแรก
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
+    fetchUsers(1, filters, sorting, pagination)
+  }, []) // โหลดครั้งเดียวตอน mount
+
+  // โหลดข้อมูลเมื่อ filters หรือ sorting เปลี่ยน
+  useEffect(() => {
+    fetchUsers(1, filters, sorting, pagination)
+  }, [filters, sorting])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -105,7 +111,7 @@ function UsersAdmin() {
         throw new Error(errorData.error || 'Failed to save user')
       }
       
-      await fetchUsers(pagination.currentPage)
+      await fetchUsers(pagination.currentPage, filters, sorting, pagination)
       resetForm()
     } catch (err) {
       setError(err.message)
@@ -145,7 +151,7 @@ function UsersAdmin() {
         throw new Error(errorData.error || 'Failed to delete user')
       }
       
-      await fetchUsers(pagination.currentPage)
+      await fetchUsers(pagination.currentPage, filters, sorting, pagination)
     } catch (err) {
       setError(err.message)
     }
@@ -179,7 +185,7 @@ function UsersAdmin() {
   }
 
   const handlePageChange = (page) => {
-    fetchUsers(page)
+    fetchUsers(page, filters, sorting, pagination)
   }
 
   const getRoleText = (role) => {

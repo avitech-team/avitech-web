@@ -43,7 +43,7 @@ function ProductsAdmin() {
   })
 
   // ดึงข้อมูลสินค้าจาก API
-  const fetchProducts = useCallback(async (page = 1) => {
+  const fetchProducts = useCallback(async (page = 1, currentFilters = filters, currentSorting = sorting, currentPagination = pagination) => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -51,16 +51,16 @@ function ProductsAdmin() {
       // สร้าง query parameters
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: pagination.limit.toString(),
-        sortBy: sorting.sortBy,
-        sortOrder: sorting.sortOrder
+        limit: currentPagination.limit.toString(),
+        sortBy: currentSorting.sortBy,
+        sortOrder: currentSorting.sortOrder
       })
       
-      if (filters.search) params.append('search', filters.search)
-      if (filters.category) params.append('category', filters.category)
-      if (filters.brand) params.append('brand', filters.brand)
-      if (filters.status !== '') params.append('status', filters.status)
-      if (filters.featured !== '') params.append('featured', filters.featured)
+      if (currentFilters.search) params.append('search', currentFilters.search)
+      if (currentFilters.category) params.append('category', currentFilters.category)
+      if (currentFilters.brand) params.append('brand', currentFilters.brand)
+      if (currentFilters.status !== '') params.append('status', currentFilters.status)
+      if (currentFilters.featured !== '') params.append('featured', currentFilters.featured)
 
       const response = await fetch(`/api/products?${params.toString()}`, {
         headers: {
@@ -76,7 +76,7 @@ function ProductsAdmin() {
       const data = await response.json()
       setProducts(data.products || [])
       setPagination({
-        ...pagination,
+        ...currentPagination,
         currentPage: data.pagination.currentPage,
         totalPages: data.pagination.totalPages,
         totalItems: data.pagination.totalItems
@@ -86,7 +86,7 @@ function ProductsAdmin() {
     } finally {
       setLoading(false)
     }
-  }, [filters, sorting, pagination])
+  }, []) // ไม่มี dependencies
 
   // ดึงข้อมูลหมวดหมู่และแบรนด์
   const fetchCategoriesAndBrands = async () => {
@@ -119,10 +119,16 @@ function ProductsAdmin() {
     }
   }
 
+  // โหลดข้อมูลครั้งแรก
   useEffect(() => {
-    fetchProducts()
+    fetchProducts(1, filters, sorting, pagination)
     fetchCategoriesAndBrands()
-  }, [fetchProducts])
+  }, []) // โหลดครั้งเดียวตอน mount
+
+  // โหลดข้อมูลเมื่อ filters หรือ sorting เปลี่ยน
+  useEffect(() => {
+    fetchProducts(1, filters, sorting, pagination)
+  }, [filters, sorting])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
