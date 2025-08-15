@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function CouponsAdmin() {
   const [coupons, setCoupons] = useState([])
@@ -32,6 +33,7 @@ function CouponsAdmin() {
       setCoupons(data.coupons || [])
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -44,6 +46,7 @@ function CouponsAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      showLoading('กำลังบันทึกข้อมูล...')
       const token = localStorage.getItem('token')
       const url = editingId ? `/api/coupons` : `/api/coupons`
       const method = editingId ? 'PUT' : 'POST'
@@ -64,10 +67,13 @@ function CouponsAdmin() {
         throw new Error(errorData.error || 'Failed to save coupon')
       }
       
+      closeLoading()
+      showSuccess(editingId ? 'อัปเดตคูปองสำเร็จ' : 'เพิ่มคูปองสำเร็จ')
       await fetchCoupons()
       resetForm()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -86,9 +92,12 @@ function CouponsAdmin() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบคูปองนี้?')) return
+    const result = await showDeleteConfirm('ยืนยันการลบคูปอง', 'คุณแน่ใจหรือไม่ที่จะลบคูปองนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')
+    
+    if (!result.isConfirmed) return
     
     try {
+      showLoading('กำลังลบคูปอง...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/coupons', {
         method: 'DELETE',
@@ -104,9 +113,12 @@ function CouponsAdmin() {
         throw new Error(errorData.error || 'Failed to delete coupon')
       }
       
+      closeLoading()
+      showSuccess('ลบคูปองสำเร็จ')
       await fetchCoupons()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -149,12 +161,6 @@ function CouponsAdmin() {
           เพิ่มคูปอง
         </button>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">

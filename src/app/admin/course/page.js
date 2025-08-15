@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function CourseAdmin() {
   const [courses, setCourses] = useState([])
@@ -33,6 +34,7 @@ function CourseAdmin() {
       setCourses(data.courses || [])
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -45,6 +47,7 @@ function CourseAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      showLoading('กำลังบันทึกข้อมูล...')
       const token = localStorage.getItem('token')
       const url = editingId ? `/api/course` : `/api/course`
       const method = editingId ? 'PUT' : 'POST'
@@ -65,10 +68,13 @@ function CourseAdmin() {
         throw new Error(errorData.error || 'Failed to save course')
       }
       
+      closeLoading()
+      showSuccess(editingId ? 'อัปเดตคอร์สสำเร็จ' : 'เพิ่มคอร์สสำเร็จ')
       await fetchCourses()
       resetForm()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -87,9 +93,12 @@ function CourseAdmin() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบคอร์สนี้?')) return
+    const result = await showDeleteConfirm('ยืนยันการลบคอร์ส', 'คุณแน่ใจหรือไม่ที่จะลบคอร์สนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')
+    
+    if (!result.isConfirmed) return
     
     try {
+      showLoading('กำลังลบคอร์ส...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/course', {
         method: 'DELETE',
@@ -105,9 +114,12 @@ function CourseAdmin() {
         throw new Error(errorData.error || 'Failed to delete course')
       }
       
+      closeLoading()
+      showSuccess('ลบคอร์สสำเร็จ')
       await fetchCourses()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -145,12 +157,6 @@ function CourseAdmin() {
           เพิ่มคอร์ส
         </button>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">

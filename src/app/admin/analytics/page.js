@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { showError } from '../../../../lib/sweetalert'
 
 function AnalyticsAdmin() {
   const [analyticsData, setAnalyticsData] = useState({})
@@ -22,6 +23,7 @@ function AnalyticsAdmin() {
       setAnalyticsData(data.analytics || {})
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }

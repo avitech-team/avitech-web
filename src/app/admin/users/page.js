@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading, showToast } from '../../../../lib/sweetalert'
 
 function UsersAdmin() {
   const [users, setUsers] = useState([])
@@ -8,13 +9,14 @@ function UsersAdmin() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
-    password: '',
     phone: '',
     address: '',
     role: 0,
-    is_active: true
+    password: '',
+    confirm_password: ''
   })
 
   // ฟิลเตอร์และเรียงลำดับ
@@ -73,6 +75,7 @@ function UsersAdmin() {
       })
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -90,7 +93,20 @@ function UsersAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // ตรวจสอบรหัสผ่าน
+    if (!editingId && formData.password !== formData.confirm_password) {
+      showError('รหัสผ่านไม่ตรงกัน', 'กรุณาตรวจสอบรหัสผ่านและรหัสผ่านยืนยัน')
+      return
+    }
+    
+    if (!editingId && formData.password.length < 6) {
+      showError('รหัสผ่านสั้นเกินไป', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
+      return
+    }
+
     try {
+      showLoading('กำลังบันทึกข้อมูล...')
       const token = localStorage.getItem('token')
       const url = editingId ? `/api/users` : `/api/users`
       const method = editingId ? 'PUT' : 'POST'
@@ -111,31 +127,38 @@ function UsersAdmin() {
         throw new Error(errorData.error || 'Failed to save user')
       }
       
+      closeLoading()
+      showSuccess(editingId ? 'อัปเดตผู้ใช้สำเร็จ' : 'เพิ่มผู้ใช้สำเร็จ')
       await fetchUsers(pagination.currentPage, filters, sorting, pagination)
       resetForm()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
   const handleEdit = (user) => {
     setEditingId(user.id)
     setFormData({
-      name: `${user.first_name} ${user.last_name}`.trim(),
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
       email: user.email || '',
-      password: '',
       phone: user.phone || '',
       address: user.address || '',
       role: user.role || 0,
-      is_active: user.is_active !== false
+      password: '',
+      confirm_password: ''
     })
     setIsAdding(true)
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?')) return
+    const result = await showDeleteConfirm('ยืนยันการลบผู้ใช้', 'คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')
+    
+    if (!result.isConfirmed) return
     
     try {
+      showLoading('กำลังลบผู้ใช้...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/users', {
         method: 'DELETE',
@@ -151,21 +174,25 @@ function UsersAdmin() {
         throw new Error(errorData.error || 'Failed to delete user')
       }
       
+      closeLoading()
+      showSuccess('ลบผู้ใช้สำเร็จ')
       await fetchUsers(pagination.currentPage, filters, sorting, pagination)
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
   const resetForm = () => {
     setFormData({
-      name: '',
+      first_name: '',
+      last_name: '',
       email: '',
-      password: '',
       phone: '',
       address: '',
       role: 0,
-      is_active: true
+      password: '',
+      confirm_password: ''
     })
     setIsAdding(false)
     setEditingId(null)
@@ -190,16 +217,16 @@ function UsersAdmin() {
 
   const getRoleText = (role) => {
     switch (role) {
-      case 1: return 'ผู้ดูแลระบบ'
-      case 0: return 'ผู้ใช้ทั่วไป'
+      case 1: return 'แอดมิน'
+      case 0: return 'ผู้ใช้'
       default: return 'ไม่ระบุ'
     }
   }
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 1: return 'bg-red-100 text-red-800'
-      case 0: return 'bg-blue-100 text-blue-800'
+      case 1: return 'bg-purple-100 text-purple-800'
+      case 0: return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -224,63 +251,6 @@ function UsersAdmin() {
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      {/* ฟิลเตอร์และเรียงลำดับ */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ค้นหา</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="ชื่อ, อีเมล"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">บทบาท</label>
-            <select
-              value={filters.role}
-              onChange={(e) => handleFilterChange('role', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="0">ผู้ใช้ทั่วไป</option>
-              <option value="1">ผู้ดูแลระบบ</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">สถานะ</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="true">ใช้งาน</option>
-              <option value="false">ไม่ใช้งาน</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setFilters({ search: '', role: '', status: '' })
-                setSorting({ sortBy: 'created_at', sortOrder: 'desc' })
-              }}
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              รีเซ็ต
-            </button>
-          </div>
-        </div>
-      </div>
-
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">
@@ -290,12 +260,24 @@ function UsersAdmin() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ชื่อ-นามสกุล
+                  ชื่อ
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  นามสกุล
+                </label>
+                <input
+                  type="text"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -314,18 +296,6 @@ function UsersAdmin() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  รหัสผ่าน {editingId && '(เว้นว่างถ้าไม่เปลี่ยน)'}
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required={!editingId}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
                   เบอร์โทร
                 </label>
                 <input
@@ -337,30 +307,45 @@ function UsersAdmin() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  บทบาท
+                  สิทธิ์
                 </label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value={0}>ผู้ใช้ทั่วไป</option>
-                  <option value={1}>ผู้ดูแลระบบ</option>
+                  <option value={0}>ผู้ใช้</option>
+                  <option value={1}>แอดมิน</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  สถานะ
-                </label>
-                <select
-                  value={formData.is_active ? 'true' : 'false'}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.value === 'true' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="true">ใช้งาน</option>
-                  <option value="false">ไม่ใช้งาน</option>
-                </select>
-              </div>
+              {!editingId && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      รหัสผ่าน
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required={!editingId}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ยืนยันรหัสผ่าน
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.confirm_password}
+                      onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required={!editingId}
+                    />
+                  </div>
+                </>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -392,58 +377,79 @@ function UsersAdmin() {
         </div>
       )}
 
+      {/* ฟิลเตอร์และเรียงลำดับ */}
+      <div className="bg-white p-4 rounded-lg shadow-md">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ค้นหา</label>
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              placeholder="ชื่อ, อีเมล"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">สิทธิ์</label>
+            <select
+              value={filters.role}
+              onChange={(e) => handleFilterChange('role', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="0">ผู้ใช้</option>
+              <option value="1">แอดมิน</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">สถานะ</label>
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">ทั้งหมด</option>
+              <option value="true">ใช้งาน</option>
+              <option value="false">ไม่ใช้งาน</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setFilters({ search: '', role: '', status: '' })
+                setSorting({ sortBy: 'created_at', sortOrder: 'desc' })
+              }}
+              className="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              รีเซ็ต
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSortChange('first_name')}
-                >
-                  <div className="flex items-center">
-                    ชื่อ-นามสกุล
-                    {sorting.sortBy === 'first_name' && (
-                      <span className="ml-1">
-                        {sorting.sortOrder === 'asc' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </div>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ชื่อ
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSortChange('email')}
-                >
-                  <div className="flex items-center">
-                    อีเมล
-                    {sorting.sortBy === 'email' && (
-                      <span className="ml-1">
-                        {sorting.sortOrder === 'asc' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </div>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  อีเมล
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   เบอร์โทร
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  บทบาท
+                  สิทธิ์
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   สถานะ
                 </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSortChange('created_at')}
-                >
-                  <div className="flex items-center">
-                    วันที่สมัคร
-                    {sorting.sortBy === 'created_at' && (
-                      <span className="ml-1">
-                        {sorting.sortOrder === 'asc' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </div>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  วันที่สมัคร
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   การดำเนินการ
@@ -455,7 +461,7 @@ function UsersAdmin() {
                 <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {`${user.first_name} ${user.last_name}`.trim() || 'ไม่ระบุ'}
+                      {user.first_name} {user.last_name}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -491,7 +497,6 @@ function UsersAdmin() {
                     <button
                       onClick={() => handleDelete(user.id)}
                       className="text-red-600 hover:text-red-900"
-                      disabled={user.role === 1}
                     >
                       ลบ
                     </button>

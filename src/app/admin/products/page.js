@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading, showToast } from '../../../../lib/sweetalert'
 
 function ProductsAdmin() {
   const [products, setProducts] = useState([])
@@ -83,6 +84,7 @@ function ProductsAdmin() {
       })
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -115,7 +117,7 @@ function ProductsAdmin() {
         setBrands(brandsData.brands || [])
       }
     } catch (err) {
-      console.error('Error fetching categories and brands:', err)
+      showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดหมวดหมู่และแบรนด์ได้')
     }
   }
 
@@ -133,6 +135,7 @@ function ProductsAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      showLoading('กำลังบันทึกข้อมูล...')
       const token = localStorage.getItem('token')
       const url = editingId ? `/api/products` : `/api/products`
       const method = editingId ? 'PUT' : 'POST'
@@ -153,10 +156,13 @@ function ProductsAdmin() {
         throw new Error(errorData.error || 'Failed to save product')
       }
       
-      await fetchProducts(pagination.currentPage)
+      closeLoading()
+      showSuccess(editingId ? 'อัปเดตสินค้าสำเร็จ' : 'เพิ่มสินค้าสำเร็จ')
+      await fetchProducts(pagination.currentPage, filters, sorting, pagination)
       resetForm()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -178,9 +184,12 @@ function ProductsAdmin() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบสินค้านี้?')) return
+    const result = await showDeleteConfirm('ยืนยันการลบสินค้า', 'คุณแน่ใจหรือไม่ที่จะลบสินค้านี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')
+    
+    if (!result.isConfirmed) return
     
     try {
+      showLoading('กำลังลบสินค้า...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/products', {
         method: 'DELETE',
@@ -196,9 +205,12 @@ function ProductsAdmin() {
         throw new Error(errorData.error || 'Failed to delete product')
       }
       
-      await fetchProducts(pagination.currentPage)
+      closeLoading()
+      showSuccess('ลบสินค้าสำเร็จ')
+      await fetchProducts(pagination.currentPage, filters, sorting, pagination)
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -233,7 +245,7 @@ function ProductsAdmin() {
   }
 
   const handlePageChange = (page) => {
-    fetchProducts(page)
+    fetchProducts(page, filters, sorting, pagination)
   }
 
   const handleImageChange = (e) => {
@@ -268,12 +280,6 @@ function ProductsAdmin() {
           เพิ่มสินค้า
         </button>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       {/* ฟิลเตอร์และเรียงลำดับ */}
       <div className="bg-white p-4 rounded-lg shadow-md">

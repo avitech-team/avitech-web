@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { showSuccess, showError, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function SettingsAdmin() {
   const [settings, setSettings] = useState(null)
@@ -63,6 +64,7 @@ function SettingsAdmin() {
       }
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -78,6 +80,8 @@ function SettingsAdmin() {
       setSaving(true)
       setError(null)
       setSuccess(null)
+      
+      showLoading('กำลังบันทึกการตั้งค่า...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/settings', {
@@ -97,8 +101,13 @@ function SettingsAdmin() {
       const data = await response.json()
       setSettings(data.settings)
       setSuccess('อัปเดตการตั้งค่าเรียบร้อยแล้ว')
+      
+      closeLoading()
+      showSuccess('บันทึกการตั้งค่าสำเร็จ', 'การตั้งค่าได้ถูกอัปเดตเรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setSaving(false)
     }
@@ -125,18 +134,6 @@ function SettingsAdmin() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-semibold mb-2 md:mb-4">การตั้งค่าระบบ</h1>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-          {success}
-        </div>
-      )}
 
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-6">ข้อมูลเว็บไซต์</h2>

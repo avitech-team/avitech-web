@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { showSuccess, showError } from "../../../../lib/sweetalert";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -17,9 +18,11 @@ export default function ForgotPasswordPage() {
     });
     if (res.ok) {
       setSent(true);
+      showSuccess('ส่งอีเมลสำเร็จ', 'หากอีเมลนี้มีอยู่ในระบบ ลิงก์รีเซ็ตรหัสผ่านจะถูกส่งไปให้คุณ');
     } else {
       const result = await res.json();
       setError(result.error || "Failed to send reset email");
+      showError('ส่งอีเมลไม่สำเร็จ', result.error || "Failed to send reset email");
     }
   };
 

@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function EventAdmin() {
   const [events, setEvents] = useState([])
@@ -33,6 +34,7 @@ function EventAdmin() {
       setEvents(data.events || [])
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -45,6 +47,7 @@ function EventAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      showLoading('กำลังบันทึกข้อมูล...')
       const token = localStorage.getItem('token')
       const url = editingId ? `/api/event` : `/api/event`
       const method = editingId ? 'PUT' : 'POST'
@@ -65,10 +68,13 @@ function EventAdmin() {
         throw new Error(errorData.error || 'Failed to save event')
       }
       
+      closeLoading()
+      showSuccess(editingId ? 'อัปเดตอีเวนต์สำเร็จ' : 'เพิ่มอีเวนต์สำเร็จ')
       await fetchEvents()
       resetForm()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -87,9 +93,12 @@ function EventAdmin() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบอีเวนต์นี้?')) return
+    const result = await showDeleteConfirm('ยืนยันการลบอีเวนต์', 'คุณแน่ใจหรือไม่ที่จะลบอีเวนต์นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')
+    
+    if (!result.isConfirmed) return
     
     try {
+      showLoading('กำลังลบอีเวนต์...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/event', {
         method: 'DELETE',
@@ -105,9 +114,12 @@ function EventAdmin() {
         throw new Error(errorData.error || 'Failed to delete event')
       }
       
+      closeLoading()
+      showSuccess('ลบอีเวนต์สำเร็จ')
       await fetchEvents()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -145,12 +157,6 @@ function EventAdmin() {
           เพิ่มอีเวนต์
         </button>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">

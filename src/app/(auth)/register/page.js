@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createClient } from "../../../../lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { showSuccess, showError } from "../../../../lib/sweetalert";
 
 export default function RegisterPage() {
   const [first_name, setFirstName] = useState("");
@@ -19,6 +20,7 @@ export default function RegisterPage() {
     
     if (!first_name || !last_name || !email || !password) {
       setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+      showError('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลให้ครบถ้วน');
       return;
     }
     
@@ -30,8 +32,9 @@ export default function RegisterPage() {
     const result = await res.json();
     if (!res.ok) {
       setError(result.error || "Register failed");
+      showError('ลงทะเบียนไม่สำเร็จ', result.error || "Register failed");
     } else {
-      alert("Register success!");
+      showSuccess('ลงทะเบียนสำเร็จ', 'คุณได้ลงทะเบียนเรียบร้อยแล้ว กรุณาเข้าสู่ระบบ');
       router.push("/auth/login");
     }
   };

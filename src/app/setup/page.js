@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { showSuccess, showError, showLoading, closeLoading } from '../../../lib/sweetalert'
 
 function SetupAdmin() {
   const [formData, setFormData] = useState({
@@ -28,7 +29,7 @@ function SetupAdmin() {
         setIsSetup(hasAdmin)
       }
     } catch (err) {
-      console.error('Error checking admin:', err)
+      showError('เกิดข้อผิดพลาด', 'ไม่สามารถตรวจสอบสถานะแอดมินได้')
     }
   }
 
@@ -41,17 +42,20 @@ function SetupAdmin() {
     // ตรวจสอบรหัสผ่าน
     if (formData.password !== formData.confirmPassword) {
       setError('รหัสผ่านไม่ตรงกัน')
+      showError('รหัสผ่านไม่ตรงกัน', 'กรุณาตรวจสอบรหัสผ่านและรหัสผ่านยืนยัน')
       setLoading(false)
       return
     }
 
     if (formData.password.length < 6) {
       setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
+      showError('รหัสผ่านสั้นเกินไป', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
       setLoading(false)
       return
     }
 
     try {
+      showLoading('กำลังสร้างแอดมิน...')
       const response = await fetch('/api/auth/setup-admin', {
         method: 'POST',
         headers: {
@@ -75,11 +79,17 @@ function SetupAdmin() {
           password: '',
           confirmPassword: ''
         })
+        closeLoading()
+        showSuccess('สร้างแอดมินสำเร็จ', 'คุณสามารถเข้าสู่ระบบได้แล้ว')
       } else {
         setError(data.error || 'เกิดข้อผิดพลาดในการสร้างแอดมิน')
+        closeLoading()
+        showError('สร้างแอดมินไม่สำเร็จ', data.error || 'เกิดข้อผิดพลาดในการสร้างแอดมิน')
       }
     } catch (err) {
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อ')
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ')
     } finally {
       setLoading(false)
     }

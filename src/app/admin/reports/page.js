@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { showError } from '../../../../lib/sweetalert'
 
 function ReportsAdmin() {
   const [reportData, setReportData] = useState([])
@@ -25,6 +26,7 @@ function ReportsAdmin() {
   const fetchReport = useCallback(async () => {
     if (!startDate || !endDate) {
       setError('กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด')
+      showError('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด')
       return
     }
 
@@ -49,6 +51,7 @@ function ReportsAdmin() {
       setSummary(data.summary || {})
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }

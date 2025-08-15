@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { showSuccess, showError, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function OrdersAdmin() {
   const [orders, setOrders] = useState([])
@@ -27,7 +28,7 @@ function OrdersAdmin() {
   })
 
   // ดึงข้อมูลออเดอร์จาก API
-  const fetchOrders = useCallback(async (page = 1) => {
+  const fetchOrders = useCallback(async (page = 1, currentFilters = filters, currentSorting = sorting, currentPagination = pagination) => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -35,14 +36,14 @@ function OrdersAdmin() {
       // สร้าง query parameters
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: pagination.limit.toString(),
-        sortBy: sorting.sortBy,
-        sortOrder: sorting.sortOrder
+        limit: currentPagination.limit.toString(),
+        sortBy: currentSorting.sortBy,
+        sortOrder: currentSorting.sortOrder
       })
       
-      if (filters.search) params.append('search', filters.search)
-      if (filters.status) params.append('status', filters.status)
-      if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus)
+      if (currentFilters.search) params.append('search', currentFilters.search)
+      if (currentFilters.status) params.append('status', currentFilters.status)
+      if (currentFilters.paymentStatus) params.append('paymentStatus', currentFilters.paymentStatus)
 
       const response = await fetch(`/api/orders?${params.toString()}`, {
         headers: {
@@ -58,24 +59,32 @@ function OrdersAdmin() {
       const data = await response.json()
       setOrders(data.orders || [])
       setPagination({
-        ...pagination,
+        ...currentPagination,
         currentPage: data.pagination.currentPage,
         totalPages: data.pagination.totalPages,
         totalItems: data.pagination.totalItems
       })
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
-  }, [filters, sorting, pagination])
+  }, []) // ไม่มี dependencies
 
+  // โหลดข้อมูลครั้งแรก
   useEffect(() => {
-    fetchOrders()
-  }, [fetchOrders])
+    fetchOrders(1, filters, sorting, pagination)
+  }, []) // โหลดครั้งเดียวตอน mount
+
+  // โหลดข้อมูลเมื่อ filters หรือ sorting เปลี่ยน
+  useEffect(() => {
+    fetchOrders(1, filters, sorting, pagination)
+  }, [filters, sorting])
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
+      showLoading('กำลังอัปเดตสถานะ...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/orders', {
         method: 'PUT',
@@ -91,9 +100,12 @@ function OrdersAdmin() {
         throw new Error(errorData.error || 'Failed to update order status')
       }
       
-      await fetchOrders(pagination.currentPage)
+      closeLoading()
+      showSuccess('อัปเดตสถานะสำเร็จ')
+      await fetchOrders(pagination.currentPage, filters, sorting, pagination)
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -115,7 +127,7 @@ function OrdersAdmin() {
   }
 
   const handlePageChange = (page) => {
-    fetchOrders(page)
+    fetchOrders(page, filters, sorting, pagination)
   }
 
   const getStatusColor = (status) => {
@@ -180,12 +192,6 @@ function OrdersAdmin() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-semibold mb-2 md:mb-4">จัดการออเดอร์</h1>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       {/* ฟิลเตอร์และเรียงลำดับ */}
       <div className="bg-white p-4 rounded-lg shadow-md">

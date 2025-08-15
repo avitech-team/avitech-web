@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function DatabaseAdmin() {
   const [migrationStatus, setMigrationStatus] = useState('')
@@ -14,6 +15,7 @@ function DatabaseAdmin() {
       setError(null)
       setSuccess(null)
       setMigrationStatus('กำลังสร้างตาราง...')
+      showLoading('กำลังสร้างตารางฐานข้อมูล...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/migrate', {
@@ -31,9 +33,13 @@ function DatabaseAdmin() {
       const data = await response.json()
       setMigrationStatus('สร้างตารางสำเร็จ!')
       setSuccess('สร้างตารางฐานข้อมูลเรียบร้อยแล้ว')
+      closeLoading()
+      showSuccess('สร้างตารางสำเร็จ', 'สร้างตารางฐานข้อมูลเรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
       setMigrationStatus('เกิดข้อผิดพลาด')
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -45,6 +51,7 @@ function DatabaseAdmin() {
       setError(null)
       setSuccess(null)
       setSeedStatus('กำลังเพิ่มข้อมูลตัวอย่าง...')
+      showLoading('กำลังเพิ่มข้อมูลตัวอย่าง...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/seed', {
@@ -62,23 +69,28 @@ function DatabaseAdmin() {
       const data = await response.json()
       setSeedStatus('เพิ่มข้อมูลตัวอย่างสำเร็จ!')
       setSuccess('เพิ่มข้อมูลตัวอย่างเรียบร้อยแล้ว')
+      closeLoading()
+      showSuccess('เพิ่มข้อมูลตัวอย่างสำเร็จ', 'เพิ่มข้อมูลตัวอย่างเรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
       setSeedStatus('เกิดข้อผิดพลาด')
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
   }
 
   const resetDatabase = async () => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะรีเซ็ตฐานข้อมูลทั้งหมด? การดำเนินการนี้จะลบข้อมูลทั้งหมดและไม่สามารถกู้คืนได้!')) {
-      return
-    }
+    const result = await showDeleteConfirm('ยืนยันการรีเซ็ตฐานข้อมูล', 'คุณแน่ใจหรือไม่ที่จะรีเซ็ตฐานข้อมูลทั้งหมด? การดำเนินการนี้จะลบข้อมูลทั้งหมดและไม่สามารถกู้คืนได้!')
+    
+    if (!result.isConfirmed) return
 
     try {
       setLoading(true)
       setError(null)
       setSuccess(null)
+      showLoading('กำลังรีเซ็ตฐานข้อมูล...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/migrate/reset', {
@@ -94,8 +106,12 @@ function DatabaseAdmin() {
       }
 
       setSuccess('รีเซ็ตฐานข้อมูลเรียบร้อยแล้ว')
+      closeLoading()
+      showSuccess('รีเซ็ตฐานข้อมูลสำเร็จ', 'รีเซ็ตฐานข้อมูลเรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -106,6 +122,7 @@ function DatabaseAdmin() {
       setLoading(true)
       setError(null)
       setSuccess(null)
+      showLoading('กำลังแก้ไขตาราง Settings...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/migrate/fix-settings', {
@@ -122,22 +139,27 @@ function DatabaseAdmin() {
 
       const data = await response.json()
       setSuccess('แก้ไขโครงสร้างตาราง settings เรียบร้อยแล้ว')
+      closeLoading()
+      showSuccess('แก้ไขตารางสำเร็จ', 'แก้ไขโครงสร้างตาราง settings เรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
   }
 
   const convertSettingsTable = async () => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะแปลงตาราง settings เป็นแถวเดียว? การดำเนินการนี้จะแปลงข้อมูลจาก key-value pairs เป็นแถวเดียว')) {
-      return
-    }
+    const result = await showDeleteConfirm('ยืนยันการแปลงตาราง Settings', 'คุณแน่ใจหรือไม่ที่จะแปลงตาราง settings เป็นแถวเดียว? การดำเนินการนี้จะแปลงข้อมูลจาก key-value pairs เป็นแถวเดียว')
+    
+    if (!result.isConfirmed) return
 
     try {
       setLoading(true)
       setError(null)
       setSuccess(null)
+      showLoading('กำลังแปลงตาราง Settings...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/migrate/convert-settings', {
@@ -154,8 +176,12 @@ function DatabaseAdmin() {
 
       const data = await response.json()
       setSuccess('แปลงตาราง settings เป็นแถวเดียวเรียบร้อยแล้ว')
+      closeLoading()
+      showSuccess('แปลงตารางสำเร็จ', 'แปลงตาราง settings เป็นแถวเดียวเรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -166,6 +192,7 @@ function DatabaseAdmin() {
       setLoading(true)
       setError(null)
       setSuccess(null)
+      showLoading('กำลังสร้างตารางตั้งค่าเว็บไซต์...')
       
       const token = localStorage.getItem('token')
       const response = await fetch('/api/migrate/create-website-settings', {
@@ -182,8 +209,12 @@ function DatabaseAdmin() {
 
       const data = await response.json()
       setSuccess('สร้างตารางตั้งค่าเว็บไซต์เรียบร้อยแล้ว')
+      closeLoading()
+      showSuccess('สร้างตารางสำเร็จ', 'สร้างตารางตั้งค่าเว็บไซต์เรียบร้อยแล้ว')
     } catch (err) {
       setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }

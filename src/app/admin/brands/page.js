@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '../../../../lib/sweetalert'
 
 function BrandsAdmin() {
   const [brands, setBrands] = useState([])
@@ -10,8 +11,8 @@ function BrandsAdmin() {
   const [error, setError] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
-    logo: '',
-    website: '',
+    logo_url: '',
+    website_url: '',
     description: '',
     status: true
   })
@@ -31,6 +32,7 @@ function BrandsAdmin() {
       setBrands(data.brands || [])
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }
@@ -43,6 +45,7 @@ function BrandsAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      showLoading('กำลังบันทึกข้อมูล...')
       const token = localStorage.getItem('token')
       const url = editingId ? `/api/brands` : `/api/brands`
       const method = editingId ? 'PUT' : 'POST'
@@ -63,10 +66,13 @@ function BrandsAdmin() {
         throw new Error(errorData.error || 'Failed to save brand')
       }
       
+      closeLoading()
+      showSuccess(editingId ? 'อัปเดตแบรนด์สำเร็จ' : 'เพิ่มแบรนด์สำเร็จ')
       await fetchBrands()
       resetForm()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
@@ -74,8 +80,8 @@ function BrandsAdmin() {
     setEditingId(brand.id)
     setFormData({
       name: brand.name || '',
-      logo: brand.logo || '',
-      website: brand.website || '',
+      logo_url: brand.logo_url || '',
+      website_url: brand.website_url || '',
       description: brand.description || '',
       status: brand.status !== false
     })
@@ -83,9 +89,12 @@ function BrandsAdmin() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบแบรนด์นี้?')) return
+    const result = await showDeleteConfirm('ยืนยันการลบแบรนด์', 'คุณแน่ใจหรือไม่ที่จะลบแบรนด์นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้')
+    
+    if (!result.isConfirmed) return
     
     try {
+      showLoading('กำลังลบแบรนด์...')
       const token = localStorage.getItem('token')
       const response = await fetch('/api/brands', {
         method: 'DELETE',
@@ -101,17 +110,20 @@ function BrandsAdmin() {
         throw new Error(errorData.error || 'Failed to delete brand')
       }
       
+      closeLoading()
+      showSuccess('ลบแบรนด์สำเร็จ')
       await fetchBrands()
     } catch (err) {
-      setError(err.message)
+      closeLoading()
+      showError('เกิดข้อผิดพลาด', err.message)
     }
   }
 
   const resetForm = () => {
     setFormData({
       name: '',
-      logo: '',
-      website: '',
+      logo_url: '',
+      website_url: '',
       description: '',
       status: true
     })
@@ -140,12 +152,6 @@ function BrandsAdmin() {
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
       {isAdding && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">
@@ -171,8 +177,8 @@ function BrandsAdmin() {
                 </label>
                 <input
                   type="url"
-                  value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  value={formData.website_url}
+                  onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="https://example.com"
                 />
@@ -197,8 +203,8 @@ function BrandsAdmin() {
               </label>
               <input
                 type="url"
-                value={formData.logo}
-                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                value={formData.logo_url}
+                onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="https://example.com/logo.png"
               />
@@ -265,9 +271,9 @@ function BrandsAdmin() {
               {brands.map((brand) => (
                 <tr key={brand.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {brand.logo ? (
+                    {brand.logo_url ? (
                       <Image
-                        src={brand.logo}
+                        src={brand.logo_url}
                         alt={brand.name}
                         width={48}
                         height={48}
@@ -283,14 +289,14 @@ function BrandsAdmin() {
                     <div className="text-sm font-medium text-gray-900">{brand.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {brand.website ? (
+                    {brand.website_url ? (
                       <a
-                        href={brand.website}
+                        href={brand.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-900 text-sm"
                       >
-                        {brand.website}
+                        {brand.website_url}
                       </a>
                     ) : (
                       <span className="text-gray-500 text-sm">-</span>

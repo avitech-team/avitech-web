@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { showError } from '../../../../lib/sweetalert'
 
 function DashboardAdmin() {
   const [stats, setStats] = useState({
@@ -29,6 +30,7 @@ function DashboardAdmin() {
       setStats(data.analytics || {})
     } catch (err) {
       setError(err.message)
+      showError('เกิดข้อผิดพลาด', err.message)
     } finally {
       setLoading(false)
     }

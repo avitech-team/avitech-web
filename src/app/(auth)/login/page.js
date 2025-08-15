@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createClient } from "../../../../lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { showSuccess, showError } from "../../../../lib/sweetalert";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,11 +22,13 @@ export default function LoginPage() {
     const result = await res.json();
     if (!res.ok) {
       setError(result.error || "Login failed");
+      showError('เข้าสู่ระบบไม่สำเร็จ', result.error || "Login failed");
     } else {
       // เก็บ accessToken ลง localStorage
       if (result.token) {
         localStorage.setItem("token", result.token);
       }
+      showSuccess('เข้าสู่ระบบสำเร็จ', 'ยินดีต้อนรับกลับ!');
       router.push("/"); // หรือหน้า dashboard
     }
   };

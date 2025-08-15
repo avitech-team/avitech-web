@@ -1,6 +1,7 @@
 "use client";
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { showSuccess, showError } from "../../../../lib/sweetalert";
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -22,8 +23,10 @@ function ResetPasswordForm() {
     const result = await res.json();
     if (!res.ok) {
       setError(result.error || "Reset failed");
+      showError('รีเซ็ตรหัสผ่านไม่สำเร็จ', result.error || "Reset failed");
     } else {
       setSuccess(true);
+      showSuccess('รีเซ็ตรหัสผ่านสำเร็จ', 'รหัสผ่านใหม่ถูกตั้งค่าเรียบร้อยแล้ว กำลังเปลี่ยนเส้นทางไปหน้าเข้าสู่ระบบ...');
       setTimeout(() => router.push("/auth/login"), 2000);
     }
   };
